@@ -8,13 +8,18 @@
 
 typedef struct ArquivoAtributos
 {
-    char nome_extensao[30];
+    char nome[30];
+    char extensao[30];
     FILE *arq;
     double tamanho;
 
 } Arquivo;
 
-void separaNomeDaExtensao(Arquivo *arquivoEnviado);
+const char *separaNomeDaExtensao(const char *filename) {
+    const char *dot = strrchr(filename, '.');
+    if(!dot || dot == filename) return "";
+    return dot + 1;
+}
 
 int main()
 {
@@ -23,6 +28,7 @@ int main()
     int serverPorta;
 
     char comandoCliente[10];
+    char tipoEntrada[3];
 
     int clientSocket;
     char buffer[1024];
@@ -57,11 +63,17 @@ int main()
     do
     {   
         printf("\nInforme qual arquivo deseja enviar e sua extensão (Exemplo: catiza.txt): ");
-        scanf("%[^\n]%*c", arquivoEnviado.nome_extensao);
+        scanf("%[^\n]%*c", arquivoEnviado.nome);
 
-        printf("%s\n", arquivoEnviado.nome_extensao);
+        strcpy(arquivoEnviado.extensao, separaNomeDaExtensao(arquivoEnviado.nome));
 
-        if ((arquivoEnviado.arq = fopen(arquivoEnviado.nome_extensao, "rb")) == NULL)
+        if(strcmp(arquivoEnviado.extensao, "txt") == 0)
+            strcpy(tipoEntrada, "r");
+        else
+            strcpy(tipoEntrada, "rb");
+                
+
+        if ((arquivoEnviado.arq = fopen(arquivoEnviado.nome, tipoEntrada)) == NULL)
         {
             printf("Erro na abertura do arquivo\n");
             return 0;
