@@ -6,10 +6,7 @@
 #include <string.h>
 #include <time.h> 
 
-typedef struct ArquivoAtributos
-{
-    char nomeArquivo[50]; 
-    char extensao[10];
+typedef struct ArquivoAtributos{
     char nome_extensao[60];
     FILE *arq;
     double tamanho;
@@ -53,6 +50,12 @@ int main(){
     else
         printf("Error - Erro ao conectar com o cliente\n");
 
+    //Servidor para esperando uma conexão do cliente. 
+    //Faz-se aquela conexão de tres vias que tinhamos visto
+     /*---- Accept call creates a new socket for the incoming connection ----*/
+    newSocket = accept(welcomeSocket, (struct sockaddr *) NULL, NULL);
+    printf ("Cliente conectou\n");
+
     do {
         /*---- Read the message from the client into the buffer ----*/
         printf("Esperando ARQUIVO do cliente...\n");
@@ -65,7 +68,7 @@ int main(){
 
         printf("Enviando MENSAGEM de volta...\n");
         
-        sendBuffer = "ARQUIVO recebido com sucesso 100\%";
+        strcpy(sendBuffer, "ARQUIVO recebido com sucesso 100\%");
         /*---- Send message to the socket of the incoming connection ----*/
         send(newSocket,sendBuffer,sizeof(sendBuffer),0); //Envio a msg recebida com o objeto do servidor, ou, seja, a resposta para o cliente novamente com um "send"
 

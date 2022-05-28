@@ -9,14 +9,13 @@
 
 typedef struct ArquivoAtributos
 {
-    char nomeArquivo[50]; 
-    char extensao[10];
-    char nome_extensao[60];
+    char nome_extensao[30];
     FILE *arq;
-    double tamanho;
-    
+    double tamanho;    
     
 } Arquivo;
+
+void separaNomeDaExtensao(Arquivo *arquivoEnviado);
 
 
 int main(){
@@ -32,6 +31,12 @@ int main(){
     struct sockaddr_in serverAddr;
     socklen_t addr_size;
 
+    printf("\nDigite o IP do servidor que deseja conectar: ");
+    scanf("%[^\n]%*c", serverIP);
+
+    printf("\nDigite a porta do servidor que deseja conectar: ");
+    scanf("%d", &serverPorta);
+
     /*---- Create the socket. The three arguments are: ----*/
     /* 1) Internet domain 2) Stream socket 3) Default protocol (TCP in this case) */
     clientSocket = socket(PF_INET, SOCK_STREAM, 0);
@@ -40,12 +45,6 @@ int main(){
     /* Address family = Internet */
     serverAddr.sin_family = AF_INET;
 
-    printf("\nDigite o IP do servidor que deseja conectar: ");
-    scanf("%[^\n]%*c", &serverIP);
-
-    printf("\n\nDigite a porta do servidor que deseja conectar: "):
-    scanf("%d", &serverPorta);
-
     /* Set port number, using htons function to use proper byte order */
     serverAddr.sin_port = htons(serverPorta);
     /* Set IP address to localhost */
@@ -53,24 +52,27 @@ int main(){
     /* Set all bits of the padding field to 0 */
     memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);  
 
-    printf("\n\nInforme qual arquivo deseja enviar e sua extensão (Exemplo: catiza.txt): ");
-    scanf("%[^\n]%*c", arquivoEnviado->nome_extensao);
-
-    if((arquivoEnviado->arq = fopen(arquivoEnviado->nome_extensao, "rb")) == NULL){
-        printf("Erro na abertura do arquivo\n")
-        return 0;
-    }
-
-    arquivoEnviado->tamanho = sizeof(arquivoEnviado->arq);
-
     /*---- Connect the socket to the server using the address struct ----*/
     addr_size = sizeof serverAddr;
     connect(clientSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)); //Vai liberar o accept do servidor 
 
     do {
+        printf("\nInforme qual arquivo deseja enviar e sua extensão (Exemplo: catiza.txt): ");
+        scanf("%[^\n]%*c", arquivoEnviado->nome_extensao);
+
+        printf("%s\n", arquivoEnviado->nome_extensao);
+
+        if((arquivoEnviado->arq = fopen(arquivoEnviado->nome_extensao, "rb")) == NULL){
+            printf("Erro na abertura do arquivo\n");
+            return 0;
+        }
+
+        //SEPARAR O NOME DO ARQUIVO DE SUA EXTENSÃO
+
+        arquivoEnviado->tamanho = sizeof(arquivoEnviado->arq);
+
         //Cliente envia a msg pro servidor e o servidor sai daquele estado de espera de resposta 
         /*---- Send message to the server socket ----*/
-        
         send(clientSocket,arquivoEnviado,sizeof(arquivoEnviado),0);
         
         /*---- Read the message from the server into the buffer ----*/
@@ -80,7 +82,7 @@ int main(){
 
         printf("Deseja sair ou continuar enviando mais algum arquivo?\n");
         printf("1 para continuar enviando e 2 para SAIR: ");
-        scanf("%[^\n]%*c", &comandoCliente)
+        scanf("%[^\n]%*c", comandoCliente);
 
 
     } while (strcmp(comandoCliente, "2") != 0);
