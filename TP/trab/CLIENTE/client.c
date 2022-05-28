@@ -31,10 +31,10 @@ int main()
 
     printf("\nDigite o IP do servidor que deseja conectar: ");
     scanf("%[^\n]%*c", serverIP);
-    serverIP[strlen(serverIP)] = '\0';
 
     printf("\nDigite a porta do servidor que deseja conectar: ");
     scanf("%d", &serverPorta);
+    getchar();
 
     /*---- Create the socket. The three arguments are: ----*/
     /* 1) Internet domain 2) Stream socket 3) Default protocol (TCP in this case) */
@@ -55,7 +55,7 @@ int main()
     connect(clientSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)); // Vai liberar o accept do servidor
 
     do
-    {
+    {   
         printf("\nInforme qual arquivo deseja enviar e sua extensão (Exemplo: catiza.txt): ");
         scanf("%[^\n]%*c", arquivoEnviado.nome_extensao);
 
