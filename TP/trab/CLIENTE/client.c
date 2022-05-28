@@ -4,24 +4,22 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
-#include <string.h>
 #include <stdlib.h>
 
 typedef struct ArquivoAtributos
 {
     char nome_extensao[30];
     FILE *arq;
-    double tamanho;    
-    
+    double tamanho;
+
 } Arquivo;
 
 void separaNomeDaExtensao(Arquivo *arquivoEnviado);
 
-
-int main(){
-    Arquivo *arquivoEnviado;
+int main()
+{
+    Arquivo arquivoEnviado;
     char serverIP[17];
-    char nomeArquivo[100];
     int serverPorta;
 
     char comandoCliente[10];
@@ -33,6 +31,7 @@ int main(){
 
     printf("\nDigite o IP do servidor que deseja conectar: ");
     scanf("%[^\n]%*c", serverIP);
+    serverIP[strlen(serverIP)] = '\0';
 
     printf("\nDigite a porta do servidor que deseja conectar: ");
     scanf("%d", &serverPorta);
@@ -40,54 +39,54 @@ int main(){
     /*---- Create the socket. The three arguments are: ----*/
     /* 1) Internet domain 2) Stream socket 3) Default protocol (TCP in this case) */
     clientSocket = socket(PF_INET, SOCK_STREAM, 0);
-    
+
     /*---- Configure settings of the server address struct ----*/
     /* Address family = Internet */
     serverAddr.sin_family = AF_INET;
-
     /* Set port number, using htons function to use proper byte order */
     serverAddr.sin_port = htons(serverPorta);
     /* Set IP address to localhost */
     serverAddr.sin_addr.s_addr = inet_addr(serverIP);
     /* Set all bits of the padding field to 0 */
-    memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);  
+    memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
 
     /*---- Connect the socket to the server using the address struct ----*/
     addr_size = sizeof serverAddr;
-    connect(clientSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)); //Vai liberar o accept do servidor 
+    connect(clientSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)); // Vai liberar o accept do servidor
 
-    do {
+    do
+    {
         printf("\nInforme qual arquivo deseja enviar e sua extensão (Exemplo: catiza.txt): ");
-        scanf("%[^\n]%*c", arquivoEnviado->nome_extensao);
+        scanf("%[^\n]%*c", arquivoEnviado.nome_extensao);
 
-        printf("%s\n", arquivoEnviado->nome_extensao);
+        printf("%s\n", arquivoEnviado.nome_extensao);
 
-        if((arquivoEnviado->arq = fopen(arquivoEnviado->nome_extensao, "rb")) == NULL){
+        if ((arquivoEnviado.arq = fopen(arquivoEnviado.nome_extensao, "rb")) == NULL)
+        {
             printf("Erro na abertura do arquivo\n");
             return 0;
         }
 
-        //SEPARAR O NOME DO ARQUIVO DE SUA EXTENSÃO
+        // SEPARAR O NOME DO ARQUIVO DE SUA EXTENSÃO
 
-        arquivoEnviado->tamanho = sizeof(arquivoEnviado->arq);
+        arquivoEnviado.tamanho = sizeof(arquivoEnviado.arq);
 
-        //Cliente envia a msg pro servidor e o servidor sai daquele estado de espera de resposta 
+        // Cliente envia a msg pro servidor e o servidor sai daquele estado de espera de resposta
         /*---- Send message to the server socket ----*/
-        send(clientSocket,arquivoEnviado,sizeof(arquivoEnviado),0);
-        
+        send(clientSocket, &arquivoEnviado, sizeof(arquivoEnviado), 0);
+
         /*---- Read the message from the server into the buffer ----*/
         recv(clientSocket, buffer, sizeof(buffer), 0);
 
-        printf("\nData received: %s\n",buffer);   
+        printf("\nData received: %s\n", buffer);
 
         printf("Deseja sair ou continuar enviando mais algum arquivo?\n");
         printf("1 para continuar enviando e 2 para SAIR: ");
         scanf("%[^\n]%*c", comandoCliente);
 
-
     } while (strcmp(comandoCliente, "2") != 0);
- 
-    printf("Fechando Conexao e encerrando o programa...\n"); 
+
+    printf("Fechando Conexao e encerrando o programa...\n");
     close(clientSocket);
 
     return 0;
