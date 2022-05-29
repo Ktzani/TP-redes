@@ -17,6 +17,12 @@ typedef struct ArquivoAtributos{
 
 int main(){
     Arquivo arquivoRecebido;
+    Arquivo arquivoSalvo;
+
+    char ch;
+    char tipoArquivo[3];
+
+    size_t size;
 
     int welcomeSocket, newSocket;
     char recvBuffer[1024], sendBuffer[1024];
@@ -61,17 +67,27 @@ int main(){
         /*---- Read the message from the client into the buffer ----*/
         printf("Esperando ARQUIVO do cliente...\n");
 
-        recv(newSocket, &arquivoRecebido, sizeof(arquivoRecebido), 0); //Quando uma msg enviada do cliente é recebida pelo servidor
+        //Primeiro o servidor precisa saber o tamanho do arquivo que ele vai receber
+        //para saber quantos receives ele vai ter pra ir preenchendo o seu 
+        //buffer com os dados do arquivo. Logo, envio para o servidor esse tamanho do arquivo
+        //em bytes. 
+        recv(newSocket, size, sizeof(size), 0);
 
-        printf("ARQUIVO recebida do cliente = %s\n", arquivoRecebido.nome);
+        printf("TAMANHO DO ARQUIVO recebido do cliente = %ld\n", size);
 
+        bufferTotal = 0
+        //Enquanto nao tiver pegado todo o arquivo no servidor, continuo recebendo pacotes
+        while(bufferTotal < size){
+            recv(newSocket, buffer, sizeof(buffer), 0);
 
-        if(strcmp(arquivoRecebido.extensao, "txt") == 0)
-            strcpy(tipoArquivo, "w");
-        else
-            strcpy(tipoArquivo, "wb");
+            //ADICIONANDO TODOS OS PACOTES EM UM SO VETOR (todo conteudo do arquivo enviado estará 
+            //nesse vetor)
 
-        if ((arquivoSalvo.arq = fopen(arquivoRecebido.nome, tipoArquivo)) == NULL)
+            bufferTotal += buffer;
+        }
+
+        //Pego todo o conteudo que estava no arquivo, junto ele e salvo no servidor 
+        if ((arquivoSalvo.arq = fopen(arquivoRecebido.nome, "wb")) == NULL)
         {
             printf("Erro na abertura do arquivo\n");
             return 0;
@@ -80,19 +96,16 @@ int main(){
         while( ( ch = fgetc(arquivoRecebido.arq) ) != EOF )
             fputc(ch, arquivoSalvo.arq);
 
-        //FALTA PEGAR O ARQUIVO E BAIXA-LO NO SERVIDOR
-
         printf("Enviando MENSAGEM de volta...\n");
         
-        strcpy(sendBuffer, "ARQUIVO recebido com sucesso 100\%");
+        strcpy(sendBuffer, "ARQUIVO recebido com sucesso - 100\%");
         /*---- Send message to the socket of the incoming connection ----*/
         send(newSocket,sendBuffer,sizeof(sendBuffer),0); //Envio a msg recebida com o objeto do servidor, ou, seja, a resposta para o cliente novamente com um "send"
 
+        fclose(arquivoRecebido.arq);
+        fclose(arquivoSalvo.arq);
     }while (1);
 
     printf("fechando conexao...\n");
     close(newSocket);
-
-    fclose(arquivoRecebido.arq);
-    fclose(arquivoSalvo.arq);
 }

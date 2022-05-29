@@ -11,7 +11,7 @@ typedef struct ArquivoAtributos
     char nome[30];
     char extensao[30];
     FILE *arq;
-    double tamanho;
+    size_t tamanho;
 
 } Arquivo;
 
@@ -32,12 +32,10 @@ Arquivo converteParaBinario(Arquivo arq){
     Arquivo aux;
 
     char nomeArquivo[20];
+
+    char *token = strtok(arq.nome, ".");
     
-    strcpy(nomeArquivo, separaNomeDoArquivo(arq.nome));
-
-    printf("%s", nomeArquivo);
-
-    exit(1);
+    strcpy(nomeArquivo, token);
 
     strcpy(aux.extensao, "bin");
 
@@ -46,8 +44,12 @@ Arquivo converteParaBinario(Arquivo arq){
     strcat(nomeArquivo, aux.extensao);
 
     strcpy(aux.nome, nomeArquivo);
+
+    exit(1);
+
+    //NAO FUNCIONA DAQUI PARA BAIXO
     
-    arq.arq = fopen(arq.nome,"rt");
+    arq.arq = fopen(arq.nome,"r");
     aux.arq = fopen(aux.nome,"wb");
     
     do {
@@ -58,7 +60,7 @@ Arquivo converteParaBinario(Arquivo arq){
 
     fclose(arq.arq); 
     fclose(aux.arq);
-    getch();
+
     return aux;
 }
 
@@ -70,6 +72,7 @@ int main()
 
     char comandoCliente[10];
     char tipoEntrada[3];
+    size_t size;
 
     int clientSocket;
     char buffer[1024];
@@ -108,23 +111,37 @@ int main()
 
         strcpy(arquivoEnviado.extensao, separaNomeDaExtensao(arquivoEnviado.nome));
 
+        //Se for txt, transformo em binario
         if(strcmp(arquivoEnviado.extensao, "txt") == 0)
             arquivoEnviado = converteParaBinario(arquivoEnviado);
-                
-
+        
+        //Abrindo arquivo
         if ((arquivoEnviado.arq = fopen(arquivoEnviado.nome, "rb")) == NULL)
         {
             printf("Erro na abertura do arquivo\n");
             return 0;
         }
 
-        // SEPARAR O NOME DO ARQUIVO DE SUA EXTENSÃO
+        //Pegando o tamanho do arquivo
+        fseek(arquivoEnviado.arq, 0, SEEK_END);
+        size = ftell(arquivoEnviado.arq);
+        arquivoEnviado.tamanho = size;
 
-        arquivoEnviado.tamanho = sizeof(arquivoEnviado.arq);
+        //Envio o tamanho do arquivo para o servidor saber quantos pacotes estarão chegando
+        //e quantos receives serão necessários 
+        send(clientSocket, size, sizeof(size), 0);
 
-        // Cliente envia a msg pro servidor e o servidor sai daquele estado de espera de resposta
-        /*---- Send message to the server socket ----*/
-        send(clientSocket, &arquivoEnviado, sizeof(arquivoEnviado), 0);
+        //Voltando para o inicio do arquivo para pegar os "pacotes"
+        fseek(arquivoEnviado.arq, 0, SEEK_SET);
+
+        //Vou enviando pacotes a pacotes para o servidor 
+        while (!feof(arquivoEnviado.arq)){
+            fread(); 
+
+            // Cliente envia a msg pro servidor e o servidor sai daquele estado de espera de resposta
+            /*---- Send message to the server socket ----*/
+            send(clientSocket, buffer, sizeof(buffer), 0);
+        }
 
         /*---- Read the message from the server into the buffer ----*/
         recv(clientSocket, buffer, sizeof(buffer), 0);
@@ -134,6 +151,8 @@ int main()
         printf("Deseja sair ou continuar enviando mais algum arquivo?\n");
         printf("1 para continuar enviando e 2 para SAIR: ");
         scanf("%[^\n]%*c", comandoCliente);
+
+        fclose(arquivoEnviado.arq);
 
     } while (strcmp(comandoCliente, "2") != 0);
 
