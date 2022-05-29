@@ -21,6 +21,47 @@ const char *separaNomeDaExtensao(const char *filename) {
     return dot + 1;
 }
 
+const char *separaNomeDoArquivo(const char *filename) {
+    const char *dot = strrchr(filename, '.');
+    if(!dot || dot == filename) return "";
+    return dot - 1;
+}
+
+Arquivo converteParaBinario(Arquivo arq){
+    char c;
+    Arquivo aux;
+
+    char nomeArquivo[20];
+    
+    strcpy(nomeArquivo, separaNomeDoArquivo(arq.nome));
+
+    printf("%s", nomeArquivo);
+
+    exit(1);
+
+    strcpy(aux.extensao, "bin");
+
+    strcat(nomeArquivo, ".");
+
+    strcat(nomeArquivo, aux.extensao);
+
+    strcpy(aux.nome, nomeArquivo);
+    
+    arq.arq = fopen(arq.nome,"rt");
+    aux.arq = fopen(aux.nome,"wb");
+    
+    do {
+        c = getc (arq.arq);  
+        printf("%c",c); 
+        fputc(c, aux.arq);    
+    }while (!feof(arq.arq));
+
+    fclose(arq.arq); 
+    fclose(aux.arq);
+    getch();
+    return aux;
+}
+
 int main()
 {
     Arquivo arquivoEnviado;
@@ -68,12 +109,10 @@ int main()
         strcpy(arquivoEnviado.extensao, separaNomeDaExtensao(arquivoEnviado.nome));
 
         if(strcmp(arquivoEnviado.extensao, "txt") == 0)
-            strcpy(tipoEntrada, "r");
-        else
-            strcpy(tipoEntrada, "rb");
+            arquivoEnviado = converteParaBinario(arquivoEnviado);
                 
 
-        if ((arquivoEnviado.arq = fopen(arquivoEnviado.nome, tipoEntrada)) == NULL)
+        if ((arquivoEnviado.arq = fopen(arquivoEnviado.nome, "rb")) == NULL)
         {
             printf("Erro na abertura do arquivo\n");
             return 0;

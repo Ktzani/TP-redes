@@ -15,7 +15,7 @@ typedef struct ArquivoAtributos{
 
 
 int main(){
-    Arquivo *arquivoRecebido;
+    Arquivo arquivoRecebido;
 
     int welcomeSocket, newSocket;
     char recvBuffer[1024], sendBuffer[1024];
@@ -62,7 +62,7 @@ int main(){
 
         recv(newSocket, arquivoRecebido, sizeof(arquivoRecebido), 0); //Quando uma msg enviada do cliente é recebida pelo servidor
 
-        printf("ARQUIVO recebida do cliente = %s\n", arquivoRecebido->nome_extensao);
+        printf("ARQUIVO recebida do cliente = %s\n", arquivoRecebido.nome_extensao);
 
         //FALTA PEGAR O ARQUIVO E BAIXA-LO NO SERVIDOR
 
