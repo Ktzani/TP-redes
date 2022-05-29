@@ -7,7 +7,8 @@
 #include <time.h> 
 
 typedef struct ArquivoAtributos{
-    char nome_extensao[60];
+    char nome[30];
+    char extensao[30];
     FILE *arq;
     double tamanho;
     
@@ -60,9 +61,24 @@ int main(){
         /*---- Read the message from the client into the buffer ----*/
         printf("Esperando ARQUIVO do cliente...\n");
 
-        recv(newSocket, arquivoRecebido, sizeof(arquivoRecebido), 0); //Quando uma msg enviada do cliente é recebida pelo servidor
+        recv(newSocket, &arquivoRecebido, sizeof(arquivoRecebido), 0); //Quando uma msg enviada do cliente é recebida pelo servidor
 
-        printf("ARQUIVO recebida do cliente = %s\n", arquivoRecebido.nome_extensao);
+        printf("ARQUIVO recebida do cliente = %s\n", arquivoRecebido.nome);
+
+
+        if(strcmp(arquivoRecebido.extensao, "txt") == 0)
+            strcpy(tipoArquivo, "w");
+        else
+            strcpy(tipoArquivo, "wb");
+
+        if ((arquivoSalvo.arq = fopen(arquivoRecebido.nome, tipoArquivo)) == NULL)
+        {
+            printf("Erro na abertura do arquivo\n");
+            return 0;
+        }
+
+        while( ( ch = fgetc(arquivoRecebido.arq) ) != EOF )
+            fputc(ch, arquivoSalvo.arq);
 
         //FALTA PEGAR O ARQUIVO E BAIXA-LO NO SERVIDOR
 
@@ -77,5 +93,6 @@ int main(){
     printf("fechando conexao...\n");
     close(newSocket);
 
-
+    fclose(arquivoRecebido.arq);
+    fclose(arquivoSalvo.arq);
 }
