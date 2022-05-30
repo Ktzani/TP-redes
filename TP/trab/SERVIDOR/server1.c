@@ -21,9 +21,10 @@ void write_file(int sockfd, const char * filename)
       break;
       return;
     }
-    fprintf(fp, "%s", buffer);
+    fwrite(buffer, sizeof(buffer), 1, fp);
     bzero(buffer, SIZE);
   }
+  
   return;
 }
 
@@ -73,9 +74,9 @@ int main()
   new_sock = accept(sockfd, (struct sockaddr *)&new_addr, &addr_size);
 
   // Filename
-  n = recv(sockfd, buffer, SIZE, 0);
+  recv(new_sock, buffer, SIZE, 0);
   strcpy(filename, buffer);
-  printf("[+]%d:File recived: %s\n", n, filename);
+  printf("[+]File recived: %s\n", filename);
   bzero(buffer, SIZE);
 
   write_file(new_sock, filename);
