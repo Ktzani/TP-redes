@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 
 #define SIZE 1024
+#define IP_SIZE 16
 #define N 100
 
 void send_file(FILE *fp, int sockfd)
@@ -19,7 +20,7 @@ void send_file(FILE *fp, int sockfd)
   { 
     if (write(sockfd, data, nb) == -1)
     {
-      perror("[-]Error in sending file.");
+      perror("[-]Erro ao enviar arquivo.");
       exit(1);
     }
 
@@ -29,8 +30,10 @@ void send_file(FILE *fp, int sockfd)
 
 int main()
 {
-  char *ip = "127.0.0.1";
-  int port = 7891;
+  char ip[IP_SIZE];
+  char port_char[N];
+  char ch;
+  int port;
   int e;
 
   int sockfd;
@@ -41,10 +44,32 @@ int main()
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0)
   {
-    perror("[-]Error in socket");
+    perror("[-]Erro no socket");
     exit(1);
   }
-  printf("[+]Server socket created successfully.\n");
+  printf("[+]Server socket criado com sucesso.\n\n");
+
+  printf("[+]Aperte enter para selecionar o ip padrao (127.0.0.1)\n");
+  printf("[+]Digite o ip do server para conectar: ");
+  scanf("%[^\n]%*c", ip);
+  ch = getchar(); 
+
+  if(ch == '\n')
+    strcpy(ip, "127.0.0.1");
+
+  printf("[+]Ip selecionado: %s\n\n", ip);  
+
+  printf("[+]Aperte enter para selecionar a porta padrao (7891)\n");
+  printf("[+]Digite a porta para conectar: ");
+  scanf("%[^\n]%*c", port_char);
+  ch = getchar();
+
+  if(ch == '\n')
+    strcpy(port_char, "7891");
+  
+  port = atoi(port_char);
+
+  printf("[+]Endereco selecionado: %s:%d\n\n", ip, port);
 
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = port;
@@ -52,26 +77,27 @@ int main()
 
   connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
 
-  printf("[+]Connected to Server.\n");
+  printf("[+]Conectado ao Server.\n");
 
-  printf("\nInforme qual arquivo deseja enviar e sua extensão (Exemplo: catiza.txt): ");
+  printf("[+]Digite o nome do arquivo para ser enviado (file.txt): ");
   scanf("%[^\n]%*c", filename);
+
+  printf("\n");
 
   fp = fopen(filename, "r");
   if (fp == NULL)
   {
-    perror("[-]Error in reading file.");
+    perror("[-]Error ao abrir arquivo.");
     exit(1);
   }
 
   //Filename
   send(sockfd, filename, sizeof(filename), 0);
-  bzero(filename, N);
 
   send_file(fp, sockfd);
-  printf("[+]File data sent successfully.\n");
+  printf("[+]Arquivo enviado com sucesso.\n");
 
-  printf("[+]Closing the connection.\n");
+  printf("[+]Fechando conexao.\n");
   close(sockfd);
 
   return 0;
