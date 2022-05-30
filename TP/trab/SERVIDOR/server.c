@@ -1,111 +1,86 @@
-/****************** SERVER CODE ****************/
-
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <string.h>
-#include <time.h> 
+#include <netdb.h>
 
-typedef struct ArquivoAtributos{
-    char nome[30];
-    char extensao[30];
-    FILE *arq;
-    double tamanho;
-    
-} Arquivo;
+#define SIZE 1024
 
+void write_file(int sockfd, const char * filename)
+{
+  int nb;
+  FILE *fp;
+  char buffer[SIZE];
 
-int main(){
-    Arquivo arquivoRecebido;
-    Arquivo arquivoSalvo;
+  fp = fopen(filename, "w");
 
-    char ch;
-    char tipoArquivo[3];
+  nb = read(sockfd, buffer, SIZE);
 
-    size_t size;
+  while (nb > 0)
+  {
+    fwrite(buffer, 1, nb, fp); 
+    nb = read(sockfd, buffer, SIZE);
+  }
 
-    int welcomeSocket, newSocket;
-    char recvBuffer[1024], sendBuffer[1024];
-    struct sockaddr_in serverAddr;
-    //struct sockaddr_storage serverStorage;
-    socklen_t addr_size;
+  return;
+}
 
-    /*---- Create the socket. The three arguments are: ----*/
-    /* 1) Internet domain 2) Stream socket 3) Default protocol (TCP in this case) */
+int main()
+{
+  char *ip = "127.0.0.1";
+  int port = 7891;
+  int e, n;
 
-    //Welcome socket diz relação ao recebimento de conexões, o que inicia o socket
-    //SOCKET_STREAM = instancia do TCP;
-    welcomeSocket = socket(PF_INET, SOCK_STREAM, 0);
-    
-    /*---- Configure settings of the server address struct ----*/
-    /* Address family = Internet */
-    serverAddr.sin_family = AF_INET;
-    /* Set port number, using htons function to use proper byte order */
-    serverAddr.sin_port = htons(7891);
-    /* Set IP address to localhost */
-    serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1"); //Porta que estarei esperando as conexões
-    /* Set all bits of the padding field to 0 */
-    memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);  
+  int sockfd, new_sock;
+  struct sockaddr_in server_addr, new_addr;
+  socklen_t addr_size;
+  char buffer[SIZE];
+  char filename[SIZE];
 
-    /*---- Bind the address struct to the socket ----*/
-    bind(welcomeSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (sockfd < 0)
+  {
+    perror("[-]Error in socket");
+    exit(1);
+  }
+  printf("[+]Server socket created successfully.\n");
 
-      //Depois de eu abrir o socket, eu começo a ouvir , esperando receber ate no maximo 5 conexões
-    /*---- Listen on the socket, with 5 max connection requests queued ----*/
-    if(listen(welcomeSocket,5)==0)
-        printf("Listening - Esperando CONEXÃO do cliente\n");
-    else
-        printf("Error - Erro ao conectar com o cliente\n");
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_port = port;
+  server_addr.sin_addr.s_addr = inet_addr(ip);
 
-    //Servidor para esperando uma conexão do cliente. 
-    //Faz-se aquela conexão de tres vias que tinhamos visto
-     /*---- Accept call creates a new socket for the incoming connection ----*/
-    newSocket = accept(welcomeSocket, (struct sockaddr *) NULL, NULL);
-    printf ("Cliente conectou\n");
+  e = bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+  if (e < 0)
+  {
+    perror("[-]Error in bind");
+    exit(1);
+  }
+  printf("[+]Binding successfull.\n");
 
-    do {
-        /*---- Read the message from the client into the buffer ----*/
-        printf("Esperando ARQUIVO do cliente...\n");
+  if (listen(sockfd, 5) == 0)
+  {
+    printf("[+]Listening....\n");
+  }
+  else
+  {
+    perror("[-]Error in listening");
+    exit(1);
+  }
 
-        //Primeiro o servidor precisa saber o tamanho do arquivo que ele vai receber
-        //para saber quantos receives ele vai ter pra ir preenchendo o seu 
-        //buffer com os dados do arquivo. Logo, envio para o servidor esse tamanho do arquivo
-        //em bytes. 
-        recv(newSocket, size, sizeof(size), 0);
+  addr_size = sizeof(new_addr);
+  new_sock = accept(sockfd, (struct sockaddr *)&new_addr, &addr_size);
 
-        printf("TAMANHO DO ARQUIVO recebido do cliente = %ld\n", size);
+  // Filename
+  recv(new_sock, buffer, SIZE, 0);
+  strcpy(filename, buffer);
+  printf("[+]File recived: %s\n", filename);
+  bzero(buffer, SIZE);
 
-        bufferTotal = 0
-        //Enquanto nao tiver pegado todo o arquivo no servidor, continuo recebendo pacotes
-        while(bufferTotal < size){
-            recv(newSocket, buffer, sizeof(buffer), 0);
+  write_file(new_sock, filename);
 
-            //ADICIONANDO TODOS OS PACOTES EM UM SO VETOR (todo conteudo do arquivo enviado estará 
-            //nesse vetor)
+  printf("[+]Data written in the file successfully.\n");
 
-            bufferTotal += buffer;
-        }
-
-        //Pego todo o conteudo que estava no arquivo, junto ele e salvo no servidor 
-        if ((arquivoSalvo.arq = fopen(arquivoRecebido.nome, "wb")) == NULL)
-        {
-            printf("Erro na abertura do arquivo\n");
-            return 0;
-        }
-
-        while( ( ch = fgetc(arquivoRecebido.arq) ) != EOF )
-            fputc(ch, arquivoSalvo.arq);
-
-        printf("Enviando MENSAGEM de volta...\n");
-        
-        strcpy(sendBuffer, "ARQUIVO recebido com sucesso - 100\%");
-        /*---- Send message to the socket of the incoming connection ----*/
-        send(newSocket,sendBuffer,sizeof(sendBuffer),0); //Envio a msg recebida com o objeto do servidor, ou, seja, a resposta para o cliente novamente com um "send"
-
-        fclose(arquivoRecebido.arq);
-        fclose(arquivoSalvo.arq);
-    }while (1);
-
-    printf("fechando conexao...\n");
-    close(newSocket);
+  return 0;
 }
